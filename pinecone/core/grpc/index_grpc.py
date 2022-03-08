@@ -182,9 +182,18 @@ def parse_query_response(response: dict):
         m = []
         if 'matches' in match:
             for item in match['matches']:
-                sc = ScoredVector(id=item['id'], score=item.get('score', 0.0), values=item.get('values', []),
-                                  metadata=item.get('metadata', {}))
-                m.append(sc)
+                try:
+                    if len(item['id']) > 64:
+                        sc = ScoredVector(id=item['id'][:64], score=item.get('score', 0.0), values=item.get('values', []),
+                                          metadata=item.get('metadata', {}))
+                        sc.validations[('id',)] = {'max_length': 512, 'min_length': 1}
+                        sc.id = item['id']
+                    else:
+                        sc = ScoredVector(id=item['id'], score=item.get('score', 0.0), values=item.get('values', []),
+                                          metadata=item.get('metadata', {}))
+                    m.append(sc)
+                except:
+                    continue
         res.append(SingleQueryResults(matches=m, namespace=namespace))
     return QueryResponse(results=res, _check_type=False)
 
